@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import IdeaCard from '@/components/IdeaCard'
 import IdeaForm from '@/components/IdeaForm'
@@ -29,38 +28,38 @@ export default function Dashboard() {
   const [error, setError] = useState('')
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const router = useRouter()
-  const supabase = createClient()
 
-  useEffect(() => {
-    checkUser()
-  }, [])
+  const checkUser = useCallback(async () => {
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
 
-  async function checkUser() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.push('/')
       return
     }
     setUser(user)
-    await Promise.all([fetchIdeas(), fetchSubscription()])
-    setLoading(false)
-  }
 
-  async function fetchIdeas() {
+    // Fetch ideas
     const res = await fetch('/api/ideas')
     if (res.ok) {
       const data = await res.json()
       setIdeas(data)
     }
-  }
 
-  async function fetchSubscription() {
-    const { data } = await supabase
+    // Fetch subscription
+    const { data: subData } = await supabase
       .from('subscriptions')
       .select('plan, status')
       .single()
-    setSubscription(data)
-  }
+    setSubscription(subData)
+
+    setLoading(false)
+  }, [router])
+
+  useEffect(() => {
+    checkUser()
+  }, [checkUser])
 
   async function handleSubmit(idea: { title: string; description: string; category: string; tags: string[] }) {
     setError('')
@@ -81,6 +80,13 @@ export default function Dashboard() {
 
   function handleDelete(id: string) {
     setIdeas(ideas.filter((i) => i.id !== id))
+  }
+
+  async function handleSignOut() {
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/')
   }
 
   const plan = subscription?.plan || 'free'
@@ -111,10 +117,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             <span className="text-sm text-zinc-600 dark:text-zinc-400">{user?.email}</span>
             <button
-              onClick={async () => {
-                await supabase.auth.signOut()
-                router.push('/')
-              }}
+              onClick={handleSignOut}
               className="rounded-lg bg-zinc-200 px-4 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-300 dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-700"
             >
               Sign Out

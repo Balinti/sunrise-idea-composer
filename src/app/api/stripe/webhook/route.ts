@@ -1,12 +1,14 @@
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { createClient } from '@supabase/supabase-js'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -14,6 +16,7 @@ export async function POST(request: Request) {
   const signature = headersList.get('stripe-signature')!
 
   let event
+  const stripe = getStripe()
 
   try {
     event = stripe.webhooks.constructEvent(
@@ -33,7 +36,7 @@ export async function POST(request: Request) {
       const planName = session.metadata?.planName
 
       if (userId && planName) {
-        await supabaseAdmin
+        await getSupabaseAdmin()
           .from('subscriptions')
           .upsert({
             user_id: userId,
@@ -52,7 +55,7 @@ export async function POST(request: Request) {
       const subscription = event.data.object
       const status = subscription.status === 'active' ? 'active' : 'canceled'
 
-      await supabaseAdmin
+      await getSupabaseAdmin()
         .from('subscriptions')
         .update({
           status,

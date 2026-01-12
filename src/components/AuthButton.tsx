@@ -1,16 +1,16 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
 export default function AuthButton({ user }: { user: { email?: string } | null }) {
   const router = useRouter()
-  const supabase = createClient()
   const [loading, setLoading] = useState(false)
 
   const handleSignIn = async () => {
     setLoading(true)
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -21,6 +21,8 @@ export default function AuthButton({ user }: { user: { email?: string } | null }
 
   const handleSignOut = async () => {
     setLoading(true)
+    const { createClient } = await import('@/lib/supabase/client')
+    const supabase = createClient()
     await supabase.auth.signOut()
     router.refresh()
   }
