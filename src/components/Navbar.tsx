@@ -1,11 +1,7 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
-import AuthButton from './AuthButton'
+import GoogleAuth from './GoogleAuth'
 
-export default async function Navbar() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+export default function Navbar() {
   return (
     <nav className="border-b border-zinc-200 bg-white/80 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
@@ -27,15 +23,13 @@ export default async function Navbar() {
           >
             Pricing
           </Link>
-          {user && (
-            <Link
-              href="/dashboard"
-              className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
-            >
-              Dashboard
-            </Link>
-          )}
-          <AuthButton user={user} />
+          <Link
+            href="/dashboard"
+            className="text-sm font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+          >
+            Dashboard
+          </Link>
+          <GoogleAuth />
         </div>
       </div>
     </nav>
